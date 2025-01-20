@@ -9,10 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::io::{Read, Write};
-use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Arc;
-use tokio::sync::{mpsc, Mutex};
-use tokio::time::Duration;
+use tokio::sync::{mpsc, oneshot, Mutex};
 use uuid::Uuid;
 use webrtc::api::interceptor_registry::register_default_interceptors;
 use webrtc::api::media_engine::MediaEngine;
@@ -25,7 +23,7 @@ use webrtc::interceptor::registry::Registry;
 use webrtc::peer_connection::configuration::RTCConfiguration;
 use webrtc::peer_connection::peer_connection_state::RTCPeerConnectionState;
 use webrtc::peer_connection::sdp::session_description::RTCSessionDescription;
-use webrtc::peer_connection::{math_rand_alpha, RTCPeerConnection};
+use webrtc::peer_connection::RTCPeerConnection;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct RTCInitialMessage {
@@ -39,18 +37,19 @@ struct RTCInitialResponse {
 
 pub struct RTCFile {
     pub file_id: String,
-    pub binary: mpsc::Receiver<Vec<u8>>,
+    pub binary_rx: mpsc::Receiver<Vec<u8>>,
+}
+
+struct RTCFileState {
+    file_id: String,
+    size: u64,
+    binary_tx: mpsc::Sender<Vec<u8>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 struct RTCSendFileHeaderMessage {
     pub id: String,
     pub token: String,
-}
-
-pub enum RTCReceiveMessage {
-    Text(String),
-    Binary(mpsc::Sender<Vec<u8>>),
 }
 
 pub enum RTCStatus {
@@ -72,6 +71,8 @@ pub struct RTCFileError {
     pub error: String,
 }
 
+const CHANNEL_LABEL: &str = "data";
+
 pub async fn send_offer(
     signaling: &ManagedSignalingConnection,
     target_id: Uuid,
@@ -85,7 +86,7 @@ pub async fn send_offer(
 
     let data_channel = peer_connection
         .create_data_channel(
-            "data",
+            CHANNEL_LABEL,
             Some(RTCDataChannelInit {
                 ordered: Some(true),
                 max_packet_life_time: None,
@@ -113,17 +114,12 @@ pub async fn send_offer(
 
                     {
                         // send initial message
-                        let initial_message = RTCInitialMessage { files };
-                        let initial_message_str = serde_json::to_string(&initial_message).unwrap();
-                        let (tx, rx) = mpsc::channel(1);
+                        let initial_message =
+                            serde_json::to_string(&RTCInitialMessage { files }).unwrap();
 
-                        tokio::spawn(async move {
-                            let _ = tx.send(initial_message_str.into_bytes()).await;
-                        });
-
-                        let result = process_in_chunks(
+                        let result = process_string_in_chunks(
                             Arc::clone(&data_channel),
-                            rx,
+                            initial_message,
                             |data_channel, chunk| async move {
                                 data_channel.send(&chunk).await?;
                                 Ok(data_channel)
@@ -203,7 +199,7 @@ pub async fn send_offer(
 
                         let result = process_in_chunks(
                             Arc::clone(&data_channel),
-                            message.binary,
+                            message.binary_rx,
                             |data_channel, chunk| async move {
                                 data_channel.send(&chunk).await?;
                                 Ok(data_channel)
@@ -233,12 +229,24 @@ pub async fn send_offer(
         }));
     }
 
+    let mut initial_msg_buffer = BytesMut::new();
+    initial_msg_buffer.clone();
+
     data_channel.on_message(Box::new(move |msg: DataChannelMessage| {
         Box::pin({
-            if let Ok(msg) = String::from_utf8(msg.data.to_vec()) {
-                // parse file tokens
-                if let Ok(file_tokens) = serde_json::from_str::<RTCInitialResponse>(&msg) {
-                    let _ = file_tokens_tx.try_send(file_tokens.files);
+            match msg.is_string {
+                true => {
+                    // read buffer
+                    let initial_msg_buffer = initial_msg_buffer.freeze();
+                    let initial_msg_str = String::from_utf8(initial_msg_buffer.to_vec()).unwrap();
+
+                    // parse file tokens
+                    if let Ok(file_tokens) = serde_json::from_str::<RTCInitialResponse>(&initial_msg_str) {
+                        let _ = file_tokens_tx.try_send(file_tokens.files);
+                    }
+                }
+                false => {
+                    initial_msg_buffer.extend_from_slice(&msg.data);
                 }
             }
             async move {}
@@ -293,73 +301,154 @@ pub async fn send_offer(
 pub async fn accept_offer(
     signaling: &ManagedSignalingConnection,
     offer: &WsServerSdpMessage,
+    status_tx: mpsc::Sender<RTCStatus>,
+    files_tx: oneshot::Sender<Vec<FileDto>>,
+    selected_files_rx: oneshot::Receiver<HashSet<String>>,
+    error_tx: mpsc::Sender<RTCFileError>,
+    receiving_tx: mpsc::Sender<RTCFile>,
 ) -> Result<()> {
     let (peer_connection, mut done_rx) = create_peer_connection().await?;
 
-    let close_after = Arc::new(AtomicI32::new(32));
+    let (data_channel_tx, mut data_channel_rx) = mpsc::channel::<Arc<RTCDataChannel>>(1);
 
-    // Register data channel creation handling
-    peer_connection
-        .on_data_channel(Box::new(move |d: Arc<RTCDataChannel>| {
-            let d_label = d.label().to_owned();
-            let d_id = d.id();
-            println!("New DataChannel {d_label} {d_id}");
+    peer_connection.on_data_channel(Box::new(move |d: Arc<RTCDataChannel>| {
+        if d.label() != CHANNEL_LABEL {
+            return Box::pin(async {});
+        }
 
-            let close_after2 = Arc::clone(&close_after);
+        let data_channel_tx = data_channel_tx.clone();
+        Box::pin(async move {
+            let d_clone = Arc::clone(&d);
+            d.on_open(Box::new(move || {
+                let _ = data_channel_tx.try_send(d_clone);
 
-            // Register channel opening handling
-            Box::pin(async move {
-                let d2 = Arc::clone(&d);
-                let d_label2 = d_label.clone();
-                let d_id2 = d_id;
-                d.on_open(Box::new(move || {
-                    println!("Data channel '{d_label2}'-'{d_id2}' open. Random messages will now be sent to any connected DataChannels every 5 seconds");
-                    let (done_tx, mut done_rx) = mpsc::channel::<()>(1);
-                    let done_tx = Arc::new(Mutex::new(Some(done_tx)));
-                    Box::pin(async move {
-                        d2.on_close(Box::new(move || {
-                            println!("Data channel '{d_label2}'-'{d_id2}' closed.");
-                            let done_tx2 = Arc::clone(&done_tx);
-                            Box::pin(async move{
-                                let mut done = done_tx2.lock().await;
-                                done.take();
-                            })
-                        }));
+                Box::pin(async {})
+            }));
+        })
+    }));
 
-                        let mut result = Result::<usize>::Ok(0);
-                        while result.is_ok() {
-                            let timeout = tokio::time::sleep(Duration::from_secs(5));
-                            tokio::pin!(timeout);
+    let task = {
+        let status_tx = status_tx.clone();
+        let files_tx = Arc::new(Mutex::new(Some(files_tx)));
+        tokio::spawn(async move {
+            let Some(data_channel) = data_channel_rx.recv().await else {
+                return;
+            };
 
-                            tokio::select! {
-                                _ = done_rx.recv() => {
-                                    break;
-                                }
-                                _ = timeout.as_mut() =>{
-                                    let message = math_rand_alpha(15);
-                                    println!("Sending '{message}'");
-                                    result = d2.send_text(message).await.map_err(Into::into);
+            let _ = status_tx.try_send(RTCStatus::Connected);
 
-                                    let cnt = close_after2.fetch_sub(1, Ordering::SeqCst);
-                                    if cnt <= 0 {
-                                        println!("Sent times out. Closing data channel '{}'-'{}'.", d2.label(), d2.id());
-                                        let _ = d2.close().await;
-                                        break;
+            let (break_tx, mut break_rx) = mpsc::channel::<()>(1);
+            let initial_msg_buffer = Some(BytesMut::new());
+            let file_size_map = Arc::new(Mutex::new(HashMap::<String, u64>::new()));
+
+            {
+                let file_size_map = file_size_map.clone();
+                let break_tx = break_tx.clone();
+                data_channel.on_message(Box::new(move |msg: DataChannelMessage| {
+                    let mut initial_msg_buffer = initial_msg_buffer.clone();
+                    let file_size_map = file_size_map.clone();
+                    let files_tx = files_tx.clone();
+                    let break_tx = break_tx.clone();
+                    Box::pin({
+                        async move {
+                            'receive: {
+                                match msg.is_string {
+                                    true => {
+                                        if let Some(ref mut buffer) = initial_msg_buffer {
+                                            let Ok(initial_msg_str) =
+                                                String::from_utf8(msg.data.to_vec())
+                                            else {
+                                                let _ = break_tx.try_send(());
+                                                break 'receive;
+                                            };
+
+                                            let Ok(initial_msg) =
+                                                serde_json::from_str::<RTCInitialMessage>(
+                                                    &initial_msg_str,
+                                                )
+                                            else {
+                                                let _ = break_tx.try_send(());
+                                                break 'receive;
+                                            };
+
+                                            let mut file_size_map = file_size_map.lock().await;
+                                            for file in &initial_msg.files {
+                                                file_size_map.insert(file.id.clone(), file.size);
+                                            }
+                                            drop(file_size_map);
+
+                                            let mut files_tx = files_tx.lock().await;
+                                            if let Some(files_tx) = files_tx.take() {
+                                                let _ = files_tx.send(initial_msg.files);
+                                                return;
+                                            }
+
+                                            // could not send files_tx
+                                            let _ = break_tx.try_send(());
+                                        }
+                                    }
+                                    false => {
+                                        if let Some(ref mut buffer) = initial_msg_buffer {
+                                            buffer.extend_from_slice(&msg.data);
+                                            break 'receive;
+                                        }
                                     }
                                 }
                             }
                         }
                     })
                 }));
+            }
 
-                // Register text message handling
-                d.on_message(Box::new(move |msg: DataChannelMessage| {
-                    let msg_str = String::from_utf8(msg.data.to_vec()).unwrap();
-                    println!("Message from DataChannel '{d_label}': '{msg_str}'");
-                    Box::pin(async {})
-                }));
-            })
-        }));
+            let send_future = async move {
+                let Ok(selected_files) = selected_files_rx.await else {
+                    let _ = break_tx.try_send(());
+                    return Ok::<(), anyhow::Error>(());
+                };
+
+                let file_tokens = selected_files
+                    .into_iter()
+                    .map(|file_id| {
+                        let token = Uuid::new_v4().to_string();
+                        (file_id, token)
+                    })
+                    .collect::<HashMap<String, String>>();
+
+                let response_str =
+                    serde_json::to_string(&RTCInitialResponse { files: file_tokens })?;
+                if let Err(e) = process_string_in_chunks(
+                    Arc::clone(&data_channel),
+                    response_str,
+                    |data_channel, chunk| async move {
+                        data_channel.send(&chunk).await?;
+                        Ok(data_channel)
+                    },
+                )
+                .await
+                {
+                    let _ = break_tx.try_send(());
+                    return Err(e);
+                }
+
+                // Mark the end of the initial message
+                data_channel.send_text("".to_string()).await?;
+
+                Ok(())
+            };
+
+            tokio::select! {
+                _ = send_future => {
+                    tracing::debug!("Sending done.");
+                }
+                _ = break_rx.recv() => {
+                    let _ = status_tx.send(RTCStatus::Error("Unknown Error".to_string())).await;
+                }
+                _ = done_rx.recv() => {
+                    let _ = status_tx.send(RTCStatus::Finished).await;
+                }
+            }
+        })
+    };
 
     let remote_desc_sdp = decode_sdp(&offer.sdp)?;
     let remote_desc = RTCSessionDescription::offer(remote_desc_sdp)?;
@@ -384,7 +473,12 @@ pub async fn accept_offer(
         )
         .await?;
 
-    done_rx.recv().await;
+    if let Err(e) = status_tx.send(RTCStatus::SdpExchanged).await {
+        peer_connection.close().await?;
+        return Err(e.into());
+    }
+
+    task.await?;
 
     peer_connection.close().await?;
 
@@ -479,6 +573,25 @@ where
     }
 
     Ok(())
+}
+
+/// Convenience function for `process_in_chunks` that processes a string in chunks.
+pub async fn process_string_in_chunks<T, F, Fut>(
+    data_channel: T,
+    string: String,
+    callback: F,
+) -> Result<()>
+where
+    F: FnMut(T, Bytes) -> Fut,
+    Fut: Future<Output = Result<T>>,
+{
+    let (tx, rx) = mpsc::channel(1);
+
+    tokio::spawn(async move {
+        let _ = tx.send(string.into_bytes()).await;
+    });
+
+    process_in_chunks(data_channel, rx, callback).await
 }
 
 #[cfg(test)]
