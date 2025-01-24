@@ -1,0 +1,58 @@
+name: Build Localsend for Alpine Linux amd64
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # 我们使用Ubuntu来启动，但会切换到Alpine
+
+    container:
+      image: alpine:3.21.1 # 使用最新的Alpine版本
+
+    steps:
+    # 检查代码到工作区
+    - uses: actions/checkout@v4
+
+    # 安装必要的工具和依赖
+    - name: Install dependencies
+      run: |
+        apk update
+        apk add --no-cache git bash curl unzip clang lld pkgconfig gcc g++ make ninja
+        apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing libstdc++
+
+    # 下载和安装Flutter SDK
+    - name: Setup Flutter on Alpine
+      run: |
+        wget -q -O flutter_sdk.zip https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.19.0-stable.zip
+        unzip flutter_sdk.zip -d /tmp
+        echo '/tmp/flutter/bin' >> $GITHUB_PATH
+        # 下载Flutter的依赖
+        /tmp/flutter/bin/flutter doctor -v
+
+    # 验证Flutter安装
+    - name: Verify Flutter Installation
+      run: flutter --version
+
+    # 安装项目依赖
+    - name: Install Flutter dependencies
+      run: flutter pub get
+
+    # 编译Localsend
+    - name: Build Localsend for Alpine Linux
+      run: |
+        # 确保我们使用的是正确的编译器
+        export CC=/usr/bin/clang
+        export CXX=/usr/bin/clang++
+        # 构建
+        flutter build linux --release
+
+    # 如果需要，上传构建产物到工件
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: localsend-linux-amd64
+        path: build/linux/x64/release/bundle/
