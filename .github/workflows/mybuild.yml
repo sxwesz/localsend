@@ -2,7 +2,7 @@ name: Build Localsend for Alpine Linux amd64
 
 on:
   push:
-    branches: [ main , build ]
+    branches: [ main, build ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -15,48 +15,42 @@ jobs:
       image: alpine:3.21.1 # 使用最新的Alpine版本
 
     steps:
-    # 检查代码到工作区
-    - uses: actions/checkout@v4
+      # 检查代码到工作区
+      - uses: actions/checkout@v4
 
-    # 安装必要的工具和依赖
-    - name: Install dependencies
-      run: |
-        apk update
-        apk add --no-cache git bash curl unzip clang lld pkgconfig gcc g++ make ninja
-        #apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing libstdc++
-        apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing flutter
+      # 安装必要的工具和依赖
+      - name: Install dependencies
+        run: |
+          apk update
+          apk add --no-cache git bash curl unzip clang lld pkgconfig gcc g++ make ninja
+          apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing flutter
 
-    # 验证Flutter安装
-    - name: Verify Flutter Installation
-      run: flutter --version
+      # 验证Flutter安装
+      - name: Verify Flutter Installation
+        run: flutter --version
 
-    # 安装项目依赖
-    - name: Install Flutter dependencies
-      working-directory: app
-      run: flutter pub get
+      # 安装项目依赖
+      - name: Install Flutter dependencies
+        working-directory: app
+        run: flutter pub get
 
-    # 编译Localsend
-    - name: Build Localsend for Alpine Linux
-      working-directory: app
-      run: |
-        # 确保我们使用的是正确的编译器
-        #export CC=/usr/bin/clang
-        #export CXX=/usr/bin/clang++
-        # 构建
-        flutter build linux
-   - name: Create tar.gz archive
-     run: |
-         cd app/build/linux/arm64/release/bundle
-         tar -czvf ../../../../../result.tar.gz *
- 
-   - name: Upload tar.gz archive
-     uses: actions/upload-artifact@v4
-     with:
-       name: tar-gz-arm-64-result
-       path: ./app/*.tar.gz
-    # 如果需要，上传构建产物到工件
-    #- name: Upload binary
-    # uses: actions/upload-artifact@v3
-    # with:
-    #   name: localsend-linux-amd64
-    #   path: ./app/lib/*
+      # 编译Localsend
+      - name: Build Localsend for Alpine Linux
+        working-directory: app
+        run: |
+          # 确保我们使用的是正确的编译器
+          #export CC=/usr/bin/clang
+          #export CXX=/usr/bin/clang++
+          # 构建
+          flutter build linux
+
+      - name: Create tar.gz archive
+        run: |
+          cd app/build/linux/arm64/release/bundle
+          tar -czvf ../../../../../result.tar.gz *
+
+      - name: Upload tar.gz archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: tar-gz-arm-64-result
+          path: ./app/*.tar.gz
