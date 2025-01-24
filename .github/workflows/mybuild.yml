@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           apk update
-          apk add --no-cache git bash curl unzip clang lld pkgconfig gcc g++ make ninja
+          apk add --no-cache git bash curl unzip clang lld pkgconfig gcc g++ make ninja libayatana-appindicator libayatana-appindicator-dev
           apk add --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing flutter
 
       # 验证Flutter安装
