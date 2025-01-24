@@ -43,11 +43,20 @@ jobs:
         #export CC=/usr/bin/clang
         #export CXX=/usr/bin/clang++
         # 构建
-        flutter pub run build_runner build -d
-
+        flutter build linux
+   - name: Create tar.gz archive
+     run: |
+         cd app/build/linux/arm64/release/bundle
+         tar -czvf ../../../../../result.tar.gz *
+ 
+   - name: Upload tar.gz archive
+     uses: actions/upload-artifact@v4
+     with:
+       name: tar-gz-arm-64-result
+       path: ./app/*.tar.gz
     # 如果需要，上传构建产物到工件
-    - name: Upload binary
-      uses: actions/upload-artifact@v3
-      with:
-        name: localsend-linux-amd64
-        path: ./app/lib/*
+    #- name: Upload binary
+    # uses: actions/upload-artifact@v3
+    # with:
+    #   name: localsend-linux-amd64
+    #   path: ./app/lib/*
