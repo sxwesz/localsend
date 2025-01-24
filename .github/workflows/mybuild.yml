@@ -37,6 +37,7 @@ jobs:
 
     # 编译Localsend
     - name: Build Localsend for Alpine Linux
+      working-directory: app
       run: |
         # 确保我们使用的是正确的编译器
         #export CC=/usr/bin/clang
