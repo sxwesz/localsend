@@ -33,6 +33,7 @@ jobs:
         echo '/tmp/flutter/bin' >> $GITHUB_PATH
         # 下载Flutter的依赖
         export PATH=$PATH:/tmp/flutter/bin
+        flutter pub cache repair
         flutter doctor -v
 
     # 验证Flutter安装
