@@ -28,11 +28,12 @@ jobs:
     # 下载和安装Flutter SDK
     - name: Setup Flutter on Alpine
       run: |
-        wget -q -O flutter_sdk.zip https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz
-        tar xJvf flutter_sdk.zip -C /tmp
+        wget -q -O flutter_sdk.tar.xz https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz
+        tar xJvf flutter_sdk.tar.xz -C /tmp
         echo '/tmp/flutter/bin' >> $GITHUB_PATH
         # 下载Flutter的依赖
-        /tmp/flutter/bin/flutter doctor -v
+        export PATH=$PATH:/tmp/flutter/bin
+        flutter doctor -v
 
     # 验证Flutter安装
     - name: Verify Flutter Installation
