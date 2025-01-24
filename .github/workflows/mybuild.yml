@@ -32,20 +32,21 @@ jobs:
 
     # 安装项目依赖
     - name: Install Flutter dependencies
+      working-directory: app
       run: flutter pub get
 
     # 编译Localsend
     - name: Build Localsend for Alpine Linux
       run: |
         # 确保我们使用的是正确的编译器
-        export CC=/usr/bin/clang
-        export CXX=/usr/bin/clang++
+        #export CC=/usr/bin/clang
+        #export CXX=/usr/bin/clang++
         # 构建
-        flutter build linux --release
+        flutter pub run build_runner build -d
 
     # 如果需要，上传构建产物到工件
     - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
         name: localsend-linux-amd64
-        path: build/linux/x64/release/bundle/
+        path: ./app/lib/*
