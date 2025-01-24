@@ -28,7 +28,7 @@ jobs:
     # 下载和安装Flutter SDK
     - name: Setup Flutter on Alpine
       run: |
-        wget -q -O flutter_sdk.zip https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.19.0-stable.zip
+        wget -q -O flutter_sdk.zip https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz
         unzip flutter_sdk.zip -d /tmp
         echo '/tmp/flutter/bin' >> $GITHUB_PATH
         # 下载Flutter的依赖
