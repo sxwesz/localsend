@@ -20,6 +20,7 @@ import 'package:localsend_app/util/native/platform_check.dart';
 import 'package:localsend_app/util/security_helper.dart';
 import 'package:localsend_app/util/shared_preferences/shared_preferences_file.dart';
 import 'package:localsend_app/util/shared_preferences/shared_preferences_portable.dart';
+import 'package:localsend_app/util/ui/animations_status.dart';
 import 'package:logging/logging.dart';
 import 'package:refena_flutter/refena_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,6 +67,8 @@ const _themeKey = 'ls_theme'; // now called brightness
 const _colorKey = 'ls_color';
 const _localeKey = 'ls_locale';
 const _portKey = 'ls_port';
+const _networkWhitelistKey = 'ls_network_whitelist';
+const _networkBlacklistKey = 'ls_network_blacklist';
 const _timeoutKey = 'ls_timeout';
 const _multicastGroupKey = 'ls_multicast_group';
 const _destinationKey = 'ls_destination';
@@ -160,6 +163,14 @@ class PersistenceService {
 
     if (prefs.getString(_securityContext) == null) {
       await prefs.setString(_securityContext, jsonEncode(generateSecurityContext()));
+    }
+
+    if (isFirstAppStart) {
+      final systemAnimations = await getSystemAnimationsStatus();
+      if (!systemAnimations) {
+        _logger.info('System animations are disabled, disabling animations in the app.');
+        await prefs.setBool(_enableAnimations, false);
+      }
     }
 
     if (prefs.getString(_colorKey) == null) {
@@ -284,6 +295,30 @@ class PersistenceService {
 
   Future<void> setPort(int port) async {
     await _prefs.setInt(_portKey, port);
+  }
+
+  List<String>? getNetworkWhitelist() {
+    return _prefs.getStringList(_networkWhitelistKey);
+  }
+
+  Future<void> setNetworkWhitelist(List<String>? whitelist) async {
+    if (whitelist == null) {
+      await _prefs.remove(_networkWhitelistKey);
+    } else {
+      await _prefs.setStringList(_networkWhitelistKey, whitelist);
+    }
+  }
+
+  List<String>? getNetworkBlacklist() {
+    return _prefs.getStringList(_networkBlacklistKey);
+  }
+
+  Future<void> setNetworkBlacklist(List<String>? blacklist) async {
+    if (blacklist == null) {
+      await _prefs.remove(_networkBlacklistKey);
+    } else {
+      await _prefs.setStringList(_networkBlacklistKey, blacklist);
+    }
   }
 
   int getDiscoveryTimeout() {

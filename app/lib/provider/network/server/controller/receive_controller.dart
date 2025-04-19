@@ -283,7 +283,7 @@ class ReceiveController {
               path: null,
               savedToGallery: false,
               isMessage: true,
-              fileSize: message.length,
+              fileSize: utf8.encode(message).length,
               senderAlias: server.getState().session!.senderAlias,
               timestamp: DateTime.now().toUtc(),
             ));
@@ -447,12 +447,16 @@ class ReceiveController {
     final fileType = receivingFile.file.fileType;
     final saveToGallery = receiveState.saveToGallery && (fileType == FileType.image || fileType == FileType.video);
 
-    final (destinationPath, documentUri, finalName) = await digestFilePathAndPrepareDirectory(
-      parentDirectory: saveToGallery ? receiveState.cacheDirectory : receiveState.destinationDirectory,
-      fileName: receivingFile.desiredName!,
-      createdDirectories: receiveState.createdDirectories,
-    );
+    String? outerDestinationPath;
     try {
+      final (destinationPath, documentUri, finalName) = await digestFilePathAndPrepareDirectory(
+        parentDirectory: saveToGallery ? receiveState.cacheDirectory : receiveState.destinationDirectory,
+        fileName: receivingFile.desiredName!,
+        createdDirectories: receiveState.createdDirectories,
+      );
+
+      outerDestinationPath = destinationPath;
+
       _logger.info('Saving ${receivingFile.file.fileName} to $destinationPath');
 
       await saveFile(
@@ -559,14 +563,14 @@ class ReceiveController {
           // ignore: use_build_context_synchronously
           Routerino.context.pushRootImmediately(() => const HomePage(initialTab: HomeTab.receive, appStart: false));
 
-          /* open the dialog to open file instantly*/
-          if (destinationPath.isNotEmpty) {
+          // open the dialog to open file instantly
+          if (outerDestinationPath != null && outerDestinationPath.isNotEmpty) {
             OpenFileDialog.open(
-                // ignore: use_build_context_synchronously
-                Routerino.context,
-                filePath: destinationPath,
-                fileName: receivingFile.desiredName!,
-                fileType: fileType);
+              Routerino.context, // ignore: use_build_context_synchronously
+              filePath: outerDestinationPath,
+              fileType: fileType,
+              openGallery: saveToGallery,
+            );
           }
         });
       }

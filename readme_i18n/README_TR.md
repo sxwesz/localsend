@@ -5,9 +5,9 @@
 [ci-badge]: https://github.com/localsend/localsend/actions/workflows/ci.yml/badge.svg
 [ci-workflow]: https://github.com/localsend/localsend/actions/workflows/ci.yml
 
-[Homepage][homepage] • [Discord][discord] • [GitHub][github] • [Codeberg][codeberg]
+[Ana Sayfa][homepage] • [Discord][discord] • [GitHub][github] • [Codeberg][codeberg]
 
-[English](README.md) • [中文](readme_i18n/README_ZH.md) • [日本語](readme_i18n/README_JA.md) • [ภาษาไทย](readme_i18n/README_TH.md) • [Filipino](readme_i18n/README_PH.md) • [Polski](readme_i18n/README_PL.md) • [Español](readme_i18n/README_ES.md) • [Tiếng Việt](readme_i18n/README_VI.md) • [Portugês Brasil](readme_i18n/README_PT_BR.md) • [Italiano](readme_i18n/README_IT.md) • [Indonesia](readme_i18n/README_ID.md) • [ភាសាខ្មែរ](readme_i18n/README_KM.md) • [Français](readme_i18n/README_FR.md) • [فارسی](readme_i18n/README_FA.md) • [Turkish](readme_i18n/README_TR.md)
+[English (Default)](/README.md) • [Español](README_ES.md) • [فارسی](README_FA.md) • [Filipino](README_PH.md) • [Français](README_FR.md) • [Indonesia](README_ID.md) • [Italiano](README_IT.md) • [日本語](README_JA.md) • [ភាសាខ្មែរ](README_KM.md) • [한국어](README_KO.md) • [Polski](README_PL.md) • [Portugês Brasil](README_PT_BR.md) • [Русский](README_RU.md) • [ภาษาไทย](README_TH.md) • [Turkish](README_TR.md) • [Українська](README_UK.md) • [Tiếng Việt](README_VI.md) • [中文](README_ZH.md)
 
 [homepage]: https://localsend.org
 [discord]: https://discord.gg/GSRWmQNP87
@@ -16,23 +16,22 @@
 
 LocalSend, internet bağlantısına ihtiyaç duymadan, yerel ağ üzerinden yakın cihazlarla güvenli bir şekilde dosya ve mesaj paylaşmanıza olanak tanıyan ücretsiz, açık kaynaklı bir uygulamadır.
 
-- [LocalSend](#localsend)
-  - [Hakkında](#hakkında)
-  - [Ekran Görüntüleri](#ekran-görüntüleri)
-  - [İndir](#i̇ndir)
-  - [Kurulum](#kurulum)
-  - [Nasıl Çalışır](#nasıl-çalışır)
-  - [Başlarken](#başlarken)
-  - [Katkıda Bulunma](#katkıda-bulunma)
-    - [Çeviri](#çeviri)
-    - [Hata Düzeltmeleri ve İyileştirmeler](#hata-düzeltmeleri-ve-i̇yileştirmeler)
-  - [Derleme](#derleme)
-    - [Android](#android)
-    - [iOS](#ios)
-    - [macOS](#macos)
-    - [Windows](#windows)
-    - [Linux](#linux)
-  - [Katkıda Bulunanlar](#katkıda-bulunanlar)
+- [Hakkında](#hakkında)
+- [Ekran Görüntüleri](#ekran-görüntüleri)
+- [İndir](#i̇ndir)
+- [Nasıl Çalışır](#nasıl-çalışır)
+- [Başlarken](#başlarken)
+- [Katkıda Bulunma](#katkıda-bulunma)
+  - [Çeviri](#çeviri)
+  - [Hata Düzeltmeleri ve İyileştirmeler](#hata-düzeltmeleri-ve-i̇yileştirmeler)
+- [Sorun Giderme](#sorun-giderme)
+- [Derleme](#derleme)
+  - [Android](#android)
+  - [iOS](#ios)
+  - [macOS](#macos)
+  - [Windows](#windows)
+  - [Linux](#linux)
+- [Katkıda Bulunanlar](#katkıda-bulunanlar)
 
 ## Hakkında
 
@@ -76,13 +75,13 @@ Hakkında daha fazla bilgi edinin [distribution channels][].
 
 **Uyumluluk**
 
-| Platform | Minimum Version | Note                                                                                                                        |
-| -------- | --------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Android  | 5.0             | -                                                                                                                           |
-| iOS      | 12.0            | -                                                                                                                           |
-| macOS    | 11 Big Sur      | Use OpenCore Legacy Patcher 2.0.2 (See [#1005](https://github.com/localsend/localsend/issues/1005#issuecomment-2449899384)) |
-| Windows  | 10              | The last version to support Windows 7 is v1.15.4. There might be backports of newer versions for Windows 7 in the future.   |
-| Linux    | N.A.            | -                                                                                                                           |
+| Platform | Minimum Sürüm | Not                                                                                                                               |
+| -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Android  | 5.0           | -                                                                                                                                 |
+| iOS      | 12.0          | -                                                                                                                                 |
+| macOS    | 11 Big Sur    | OpenCore Legacy Patcher 2.0.2 kullanın (Bkz. [#1005](https://github.com/localsend/localsend/issues/1005#issuecomment-2449899384)) |
+| Windows  | 10            | Windows 7'yi destekleyen son sürüm v1.15.4’tür. Daha yeni sürümler için Windows 7'ye yönelik backport'lar olabilir.               |
+| Linux    | N.A.          | -                                                                                                                                 |
 
 ## Kurulum
 
@@ -122,10 +121,11 @@ LocalSend Protokolü hakkında daha fazla bilgi için [dökümantasyon](https://
 LocalSend'i kaynak kodundan derlemek için şu adımları izleyin:
 
 1. Flutter'ı [doğrudan](https://flutter.dev) veya [fvm](https://fvm.app) kullanarak kurun (gerekli [sürüm](.fvmrc) için bakın.)
-2. `LocalSend` reposunu klonlayın.
-3. `cd app` komutunu çalıştırarak uygulama dizinine girin.
-4. Bağımlılıkları indirmek için `flutter pub get` komutunu çalıştırın
-5. Uygulamayı başlatmak iin `flutter run` komutunu çalıştırın
+2. [Rust'ı](https://www.rust-lang.org/tools/install) yükleyin
+3. `LocalSend` reposunu klonlayın.
+4. `cd app` komutunu çalıştırarak uygulama dizinine girin.
+5. Bağımlılıkları indirmek için `flutter pub get` komutunu çalıştırın
+6. Uygulamayı başlatmak için `flutter run` komutunu çalıştırın
 
 > [!NOT]
 > LocalSend, şu anda daha eski bir Flutter sürümünü gerektiriyor(gerekli sürüm [.fvmrc](.fvmrc) dosyasında belirtilmiştir)
@@ -139,22 +139,15 @@ LocalSend'i geliştirmekle ilgilenen herkesten katkı bekliyoruz. Katkıda bulun
 
 ### Çeviri
 
-Bu uygulamayı diğer dillere çevirmeye yardımcı olabilirsiniz!
+LocalSend'i diğer dillere çevirmeye yardımcı olabilirsiniz. Çevirileri yönetmek için Weblate platformunu kullanıyoruz.
 
-1. Bu repoyu forklayın
-2. Birini seçin
-   - Mevcut dillerde eksik çevirileri ekleyin: Sadece [app/assets/i18n][i18n] içindeki `_missing_translations_<locale>.json`
-   - Mevcut çevirileri düzeltin: [app/assets/i18n][i18n] içindeki `strings_<locale>.i18n.json` dosyasını güncelleyin.
-   - Yeni diller ekleyin: Yeni bir dosya oluşturun; ayrıca [locale codes][] da bakın.
-3. İsteğe bağlı: Bu uygulamayı yeniden çalıştırın
-   1. Uygulama dizinine girmek için `cd app` komutunu çalıştırın.
-   2. Bu uygulamayı en az bir kez [çalıştırdığınızdan](#başlarken) emin olun.
-   3. Çevirileri güncellemek için `flutter pub run slang` komutunu çalıştırın.
-   4. Uygulamayı `flutter run` komutuyla çalıştırın.
-   5. Bir pull request açın.
+Alternatif olarak, bu repoyu fork'layarak ve çevirileri manuel olarak ekleyerek de katkıda bulunabilirsiniz.
 
-[i18n]: https://github.com/localsend/localsend/tree/main/app/assets/i18n
-[locale kodları]: https://saimana.com/list-of-country-locale-code/
+Çeviriler, [app/assets/i18n](https://github.com/localsend/localsend/tree/main/app/assets/i18n) dizininde bulunmaktadır. Çeviri eklemek veya güncellemek için `_missing_translations_<locale>.json` veya `strings_<locale>.i18n.json` dosyasını düzenleyebilirsiniz.
+
+<a href="https://hosted.weblate.org/engage/localsend/">
+<img src="https://hosted.weblate.org/widget/localsend/app/multi-auto.svg" alt="Translation status" />
+</a>
 
 **_Take note:_ `@` ile süslenmiş alanlar çevrilmek için değildir; bu alanlar uygulamada herhangi bir şekilde kullanılmaz, yalnızca dosya hakkında bilgi veren veya çevirmen için bağlam sağlayan bilgilendirici metinlerdir.**
 
@@ -164,6 +157,16 @@ Bu uygulamayı diğer dillere çevirmeye yardımcı olabilirsiniz!
 - **İyileştirmeler:** LocalSend'i geliştirmek için bir fikriniz var mı? Lütfen önce neden bu iyileştirmenin gerekli olduğunu tartışmak için bir issue oluşturun.
 
 Daha fazla bilgi için [katkı sağlama kılavuzuna](https://github.com/localsend/localsend/blob/main/CONTRIBUTING.md) bakın.
+
+## Sorun Giderme
+
+| Sorun            | Platform (Gönderici)  | Platform (Alıcı)      | Çözüm                                                                                                                                  |
+| ---------------- | --------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Cihaz görünmüyor | Herhangi bir platform | Herhangi bir platform | Yönlendiricinizde AP-İzolasyonunu devre dışı bıraktığınızdan emin olun. Bu özellik etkinse cihazlar arası bağlantılar engellenir.      |
+| Cihaz görünmüyor | Herhangi bir platform | Windows               | Ağınızı "özel" bir ağ olarak yapılandırdığınızdan emin olun. Windows, ağ "genel" olarak yapılandırıldığında daha kısıtlayıcı olabilir. |
+| Cihaz görünmüyor | macOS, iOS            | Herhangi bir platform | İşletim sistemi ayarlarında "Gizlilik" altında "Yerel Ağ" iznini açıp kapatmayı deneyebilirsiniz.                                      |
+| Hız çok yavaş    | Herhangi bir platform | Herhangi bir platform | 5 Ghz kullanın; her iki cihazda da şifrelemeyi devre dışı bırakın.                                                                     |
+| Hız çok yavaş    | Herhangi bir platform | Android               | Bilinen bir sorun. https://github.com/flutter-cavalry/saf_stream/issues/4                                                              |
 
 ## Derleme
 

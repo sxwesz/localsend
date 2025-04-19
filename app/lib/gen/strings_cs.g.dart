@@ -45,6 +45,8 @@ class TranslationsCs extends Translations {
   @override
   late final _TranslationsTroubleshootPageCs troubleshootPage = _TranslationsTroubleshootPageCs._(_root);
   @override
+  late final _TranslationsNetworkInterfacesPageCs networkInterfacesPage = _TranslationsNetworkInterfacesPageCs._(_root);
+  @override
   late final _TranslationsReceiveHistoryPageCs receiveHistoryPage = _TranslationsReceiveHistoryPageCs._(_root);
   @override
   late final _TranslationsApkPickerPageCs apkPickerPage = _TranslationsApkPickerPageCs._(_root);
@@ -269,6 +271,28 @@ class _TranslationsTroubleshootPageCs extends TranslationsTroubleshootPageEn {
   late final _TranslationsTroubleshootPageNoDiscoveryCs noDiscovery = _TranslationsTroubleshootPageNoDiscoveryCs._(_root);
   @override
   late final _TranslationsTroubleshootPageNoConnectionCs noConnection = _TranslationsTroubleshootPageNoConnectionCs._(_root);
+}
+
+// Path: networkInterfacesPage
+class _TranslationsNetworkInterfacesPageCs extends TranslationsNetworkInterfacesPageEn {
+  _TranslationsNetworkInterfacesPageCs._(TranslationsCs root)
+      : this._root = root,
+        super.internal(root);
+
+  final TranslationsCs _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get title => 'Síťová rozhraní';
+  @override
+  String get info =>
+      'Ve výchozím nastavení používá LocalSend všechna dostupná síťová rozhraní. Zde můžete vyloučit nežádoucí sítě. Chcete-li použít změny, musíte restartovat server.';
+  @override
+  String get preview => 'Náhled';
+  @override
+  String get whitelist => 'Seznam povolených';
+  @override
+  String get blacklist => 'Seznam zakázaných';
 }
 
 // Path: receiveHistoryPage
@@ -905,6 +929,10 @@ class _TranslationsSettingsTabNetworkCs extends TranslationsSettingsTabNetworkEn
   @override
   String get port => 'Port';
   @override
+  String get network => 'Síť';
+  @override
+  late final _TranslationsSettingsTabNetworkNetworkOptionsCs networkOptions = _TranslationsSettingsTabNetworkNetworkOptionsCs._(_root);
+  @override
   String get discoveryTimeout => 'Časový limit zjišťování';
   @override
   String get useSystemName => 'Použít název systému';
@@ -1482,6 +1510,21 @@ class _TranslationsSettingsTabGeneralLanguageOptionsCs extends TranslationsSetti
   // Translations
   @override
   String get system => 'Systém';
+}
+
+// Path: settingsTab.network.networkOptions
+class _TranslationsSettingsTabNetworkNetworkOptionsCs extends TranslationsSettingsTabNetworkNetworkOptionsEn {
+  _TranslationsSettingsTabNetworkNetworkOptionsCs._(TranslationsCs root)
+      : this._root = root,
+        super.internal(root);
+
+  final TranslationsCs _root; // ignore: unused_field
+
+  // Translations
+  @override
+  String get all => 'Vše';
+  @override
+  String get filtered => 'Filtrované';
 }
 
 // Path: progressPage.total.title
